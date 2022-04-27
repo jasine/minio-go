@@ -107,9 +107,12 @@ func (c *Client) FGetObject(ctx context.Context, bucketName, objectName, filePat
 	}
 
 	// Write to the part file.
-	if _, err = io.CopyN(filePart, objectReader, objectStat.Size); err != nil {
-		return err
+	if written, err2 := io.CopyBuffer(filePart, io.LimitReader(objectReader, objectStat.Size), make([]byte, 1<<22)); err2 != nil || written < objectStat.Size {
+		return err2
 	}
+	//if _, err = io.CopyN(filePart, objectReader, objectStat.Size); err != nil {
+	//	return err
+	//}
 
 	// Close the file before rename, this is specifically needed for Windows users.
 	closeAndRemove = false
